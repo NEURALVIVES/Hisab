@@ -5,10 +5,12 @@ import TransactionList from './components/TransactionList'
 import TransactionForm from './components/TransactionForm'
 import AccountForm from './components/AccountForm'
 import BudgetForm from './components/BudgetForm'
+import CategoryForm from './components/CategoryForm'
 
 const TABS = [
   { id: 'dashboard', label: 'ড্যাশবোর্ড' },
   { id: 'transactions', label: 'লেনদেন' },
+  { id: 'categories', label: 'ক্যাটাগরি' },
   { id: 'accounts', label: 'একাউন্ট' },
   { id: 'budgets', label: 'বাজেট' },
 ]
@@ -71,6 +73,24 @@ export default function App() {
     storage.saveBudgets(updated)
   }
 
+  function addCategory(c) {
+    const updated = [...categories, c]
+    setCategories(updated)
+    storage.saveCategories(updated)
+  }
+
+  function deleteCategory(id) {
+    // যে ক্যাটাগরিতে আগে থেকে লেনদেন যোগ হয়ে গেছে, সেটা ভুলে ডিলিট হওয়া ঠেকাতে চেক করা হচ্ছে
+    const inUse = transactions.some((t) => t.categoryId === id)
+    if (inUse) {
+      alert('এই ক্যাটাগরিতে আগে থেকে লেনদেন যোগ করা আছে, তাই এটা মুছে ফেলা যাবে না।')
+      return
+    }
+    const updated = categories.filter((c) => c.id !== id)
+    setCategories(updated)
+    storage.saveCategories(updated)
+  }
+
   return (
     <div className="min-h-screen bg-paper pb-24">
       <header className="bg-teal text-white px-5 py-5 rounded-b-2xl shadow-md">
@@ -105,6 +125,47 @@ export default function App() {
               className="w-full py-2.5 rounded-lg border-2 border-dashed border-teal-light text-teal font-medium mt-2"
             >
               + নতুন একাউন্ট যোগ করুন
+            </button>
+          </div>
+        )}
+
+        {tab === 'categories' && (
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-sm font-semibold text-ink/60 mb-2">খরচের খাতসমূহ</h3>
+              <div className="flex flex-wrap gap-2">
+                {categories.filter((c) => c.type === 'expense').map((c) => (
+                  <span
+                    key={c.id}
+                    className="flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full text-sm border"
+                    style={{ borderColor: c.color, color: c.color }}
+                  >
+                    {c.name}
+                    <button onClick={() => deleteCategory(c.id)} className="opacity-50 hover:opacity-100 px-1">✕</button>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-ink/60 mb-2">আয়ের খাতসমূহ</h3>
+              <div className="flex flex-wrap gap-2">
+                {categories.filter((c) => c.type === 'income').map((c) => (
+                  <span
+                    key={c.id}
+                    className="flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full text-sm border"
+                    style={{ borderColor: c.color, color: c.color }}
+                  >
+                    {c.name}
+                    <button onClick={() => deleteCategory(c.id)} className="opacity-50 hover:opacity-100 px-1">✕</button>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => setModal('category')}
+              className="w-full py-2.5 rounded-lg border-2 border-dashed border-teal-light text-teal font-medium"
+            >
+              + নতুন খাত যোগ করুন
             </button>
           </div>
         )}
@@ -162,12 +223,14 @@ export default function App() {
               {modal === 'transaction' && 'নতুন লেনদেন'}
               {modal === 'account' && 'নতুন একাউন্ট'}
               {modal === 'budget' && 'বাজেট সেট করুন'}
+              {modal === 'category' && 'নতুন খাত যোগ করুন'}
             </h2>
             {modal === 'transaction' && (
               <TransactionForm accounts={accounts} categories={categories} onAdd={addTransaction} onClose={() => setModal(null)} />
             )}
             {modal === 'account' && <AccountForm onAdd={addAccount} onClose={() => setModal(null)} />}
             {modal === 'budget' && <BudgetForm categories={categories} onAdd={addBudget} onClose={() => setModal(null)} />}
+            {modal === 'category' && <CategoryForm onAdd={addCategory} onClose={() => setModal(null)} />}
           </div>
         </div>
       )}
